@@ -4,13 +4,7 @@ import { ThemeContext, DataContext } from '../App';
 import { THEMES } from '../types';
 import { Plus, ChevronDown, X, Check, Trophy } from 'lucide-react';
 
-// Mock Data matching the image, reduced to 3 to make room for the custom leaderboard card
-const stats = [
-    { value: '8', label: 'Total Products', sub: 'Available product types', color: 'text-violet-500' },
-    { value: '7', label: 'Cement Products', sub: 'Cement and concrete products', color: 'text-emerald-500' },
-    { value: '1', label: 'Other Products', sub: 'Paint and steel products', color: 'text-pink-500' },
-    { value: 'JSW OPC', label: 'Most Sold Product', sub: 'Cement', color: 'text-blue-500' },
-];
+// Dynamic stats are now computed in the component from real data
 
 const initialProducts = [
     { name: 'JSW CHD', category: 'Cement' },
@@ -95,6 +89,32 @@ export default function ProductManagement() {
         : productsList.filter(p => p.category === filterCategory);
 
     const productsForCard = topSelling.length ? topSelling : topProductsFallback;
+
+    // Dynamic stats computation from real data
+    const stats = useMemo(() => {
+        const totalProducts = productsList.length;
+        const cementProducts = productsList.filter(p =>
+            p.category?.toLowerCase() === 'cement' || p.category?.toLowerCase() === 'concrete'
+        ).length;
+        const otherProducts = totalProducts - cementProducts;
+
+        // Find most sold product from sales data
+        let mostSoldProduct = 'N/A';
+        let mostSoldCategory = 'No sales yet';
+        if (topSelling.length > 0) {
+            mostSoldProduct = topSelling[0].name;
+            // Find category of most sold product
+            const found = productsList.find(p => p.name.toLowerCase() === mostSoldProduct.toLowerCase());
+            mostSoldCategory = found?.category || 'Unknown';
+        }
+
+        return [
+            { value: String(totalProducts), label: 'Total Products', sub: 'Available product types', color: 'text-violet-500' },
+            { value: String(cementProducts), label: 'Cement Products', sub: 'Cement and concrete products', color: 'text-emerald-500' },
+            { value: String(otherProducts), label: 'Other Products', sub: 'Paint and steel products', color: 'text-pink-500' },
+            { value: mostSoldProduct, label: 'Most Sold Product', sub: mostSoldCategory, color: 'text-blue-500' },
+        ];
+    }, [productsList, topSelling]);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-20 md:pb-0 relative">

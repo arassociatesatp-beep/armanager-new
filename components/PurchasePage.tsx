@@ -508,6 +508,52 @@ export default function PurchasePage() {
                     </div>
                 </div>
 
+                {/* Custom Date Range Pickers - Show when Custom is selected */}
+                {activeDateTab === 'Custom' && (
+                    <div className={`px-4 pb-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-200`}>
+                        <span className={`text-xs font-medium ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>Date Range:</span>
+                        <div className="flex items-center gap-2">
+                            <div className="relative" ref={fromDateRef}>
+                                <button
+                                    onClick={() => setIsFromDateOpen(!isFromDateOpen)}
+                                    className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all flex items-center gap-2 ${isDarkMode ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800' : 'bg-white border-zinc-300 text-zinc-700 hover:bg-zinc-50'}`}
+                                >
+                                    <Calendar size={12} />
+                                    {fromDate ? formatDate(fromDate) : 'Start Date'}
+                                </button>
+                                {isFromDateOpen && (
+                                    <div className="absolute top-full left-0 mt-2 z-50">
+                                        <CustomCalendar
+                                            value={fromDate}
+                                            onChange={(d) => handleDateRangeChange('from', d)}
+                                            onClose={() => setIsFromDateOpen(false)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            <span className={`text-xs ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>to</span>
+                            <div className="relative" ref={toDateRef}>
+                                <button
+                                    onClick={() => setIsToDateOpen(!isToDateOpen)}
+                                    className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all flex items-center gap-2 ${isDarkMode ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800' : 'bg-white border-zinc-300 text-zinc-700 hover:bg-zinc-50'}`}
+                                >
+                                    <Calendar size={12} />
+                                    {toDate ? formatDate(toDate) : 'End Date'}
+                                </button>
+                                {isToDateOpen && (
+                                    <div className="absolute top-full left-0 mt-2 z-50">
+                                        <CustomCalendar
+                                            value={toDate}
+                                            onChange={(d) => handleDateRangeChange('to', d)}
+                                            onClose={() => setIsToDateOpen(false)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Filter Row - Swaps based on Active Section */}
                 <div className="p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
                     {activeSection === 'Recent Purchases' ? (

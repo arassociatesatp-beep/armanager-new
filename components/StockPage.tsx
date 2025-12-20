@@ -495,6 +495,20 @@ function ShopDetails({
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedNoteId, setExpandedNoteId] = useState<number | null>(null);
 
+    // Single date filter for product summary
+    const [selectedDate, setSelectedDate] = useState<string>('');
+    const [isDateCalendarOpen, setIsDateCalendarOpen] = useState(false);
+    const dateCalendarRef = useRef<HTMLDivElement>(null);
+
+    // Close calendar when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dateCalendarRef.current && !dateCalendarRef.current.contains(event.target as Node)) setIsDateCalendarOpen(false);
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const productQuantities = useMemo(() => {
         const totals: Record<string, number> = {};
         transactions.forEach(t => {
@@ -514,6 +528,54 @@ function ShopDetails({
             .filter(item => item.quantity !== 0)
             .sort((a, b) => b.quantity - a.quantity);
     }, [transactions]);
+
+    // Helper to parse date string "dd-mm-yyyy" to Date object
+    const parseDateStr = (dateStr: string) => {
+        const [d, m, y] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
+    // Helper to check if transaction matches selected date
+    const isOnSelectedDate = (txDate: string) => {
+        if (!selectedDate) return false;
+        return txDate === selectedDate;
+    };
+
+    // Filtered product quantities based on selected date (shows sales and dumps separately)
+    const filteredDateSummary = useMemo(() => {
+        const salesTotals: Record<string, number> = {};
+        const dumpTotals: Record<string, number> = {};
+
+        transactions.forEach(t => {
+            if (!t.product) return;
+            // Apply date filter
+            if (!isOnSelectedDate(t.date)) return;
+            const qty = parseFloat(t.quantity || '0');
+            if (isNaN(qty) || qty === 0) return;
+
+            if (t.type === 'Sale' || t.type === 'Transfer Out') {
+                salesTotals[t.product] = (salesTotals[t.product] || 0) + qty;
+            } else if (t.type === 'Dump') {
+                dumpTotals[t.product] = (dumpTotals[t.product] || 0) + qty;
+            }
+        });
+
+        // Combine products from both sales and dumps
+        const allProducts = new Set([...Object.keys(salesTotals), ...Object.keys(dumpTotals)]);
+        const items = Array.from(allProducts).map(product => ({
+            product,
+            sales: salesTotals[product] || 0,
+            dumps: dumpTotals[product] || 0,
+            total: (salesTotals[product] || 0) + (dumpTotals[product] || 0)
+        })).filter(item => item.total > 0).sort((a, b) => b.total - a.total);
+
+        // Calculate grand totals
+        const totalSales = items.reduce((sum, item) => sum + item.sales, 0);
+        const totalDumps = items.reduce((sum, item) => sum + item.dumps, 0);
+        const grandTotal = totalSales + totalDumps;
+
+        return { items, totalSales, totalDumps, grandTotal };
+    }, [transactions, selectedDate]);
 
     const toggleNote = (id: number) => {
         setExpandedNoteId(prev => prev === id ? null : id);
@@ -720,7 +782,106 @@ function ShopDetails({
                 </div>
             </div>
 
-            {/* Tabs and Filters */}
+            {/* Date Summary Card */}
+            <div className={`rounded-xl border p-4 ${isDarkMode ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Daily Summary</div>
+                        <div className={`text-[11px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Sales & Dumps for selected date</div>
+                    </div>
+
+                    {/* Single Date Picker */}
+                    <div className="flex items-center justify-center sm:justify-end gap-2">
+                        <div className="relative" ref={dateCalendarRef}>
+                            <button
+                                onClick={() => setIsDateCalendarOpen(!isDateCalendarOpen)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${isDarkMode
+                                    ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:border-zinc-500'
+                                    : 'bg-white border-zinc-300 text-zinc-900 hover:border-zinc-400'}`}
+                            >
+                                <Calendar size={12} />
+                                <span>{selectedDate || 'Select Date'}</span>
+                            </button>
+                            {isDateCalendarOpen && (
+                                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setIsDateCalendarOpen(false)}>
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                        <CustomCalendar
+                                            value={selectedDate ? parseDateStr(selectedDate) : null}
+                                            onChange={(d) => {
+                                                if (d) {
+                                                    setSelectedDate(formatDate(d));
+                                                }
+                                                setIsDateCalendarOpen(false);
+                                            }}
+                                            onClose={() => setIsDateCalendarOpen(false)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Clear button */}
+                        {selectedDate && (
+                            <button
+                                onClick={() => setSelectedDate('')}
+                                className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'}`}
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Product Summary Table with Sales, Dumps, Total columns */}
+                <div className="space-y-2">
+                    {filteredDateSummary.items.length > 0 ? (
+                        <>
+                            {/* Header Row */}
+                            <div className={`flex items-center text-[10px] uppercase tracking-wide font-semibold px-3 py-1.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                <span className="flex-1">Product</span>
+                                <span className="w-16 text-right">Sales</span>
+                                <span className="w-16 text-right">Dumps</span>
+                                <span className="w-16 text-right">Total</span>
+                            </div>
+
+                            {filteredDateSummary.items.map((item) => (
+                                <div key={item.product} className={`flex items-center text-sm rounded-lg px-3 py-2 ${isDarkMode ? 'bg-zinc-900/60 text-zinc-200' : 'bg-zinc-50 text-zinc-800'}`}>
+                                    <span className="flex-1 font-medium truncate pr-2">{item.product}</span>
+                                    <span className={`w-16 text-right text-xs ${item.sales > 0 ? (isDarkMode ? 'text-blue-400' : 'text-blue-600') : 'text-zinc-400'}`}>
+                                        {item.sales > 0 ? item.sales : '-'}
+                                    </span>
+                                    <span className={`w-16 text-right text-xs ${item.dumps > 0 ? 'text-red-500' : 'text-zinc-400'}`}>
+                                        {item.dumps > 0 ? item.dumps : '-'}
+                                    </span>
+                                    <span className={`w-16 text-right text-xs font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                        {item.total} {shop.unit}
+                                    </span>
+                                </div>
+                            ))}
+
+                            {/* Grand Total Row */}
+                            <div className={`flex items-center text-sm rounded-lg px-3 py-2 mt-2 border-t ${isDarkMode ? 'border-zinc-800 bg-zinc-800/50' : 'border-zinc-200 bg-zinc-100'}`}>
+                                <span className={`flex-1 font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Total</span>
+                                <span className={`w-16 text-right text-xs font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    {filteredDateSummary.totalSales}
+                                </span>
+                                <span className={`w-16 text-right text-xs font-semibold text-red-500`}>
+                                    {filteredDateSummary.totalDumps}
+                                </span>
+                                <span className={`w-16 text-right font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                    {filteredDateSummary.grandTotal} {shop.unit}
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <div className={`text-sm py-4 text-center ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                            {selectedDate
+                                ? 'No sales or dumps for selected date.'
+                                : 'Select a date to view daily summary.'}
+                        </div>
+                    )}
+                </div>
+            </div>
             <div className={`
                 rounded-xl border overflow-hidden transition-colors mb-4
                 ${isDarkMode ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}
@@ -906,6 +1067,7 @@ function ShopDetails({
                     shops={[]} // Not used when fixedShopId is provided
                     fixedShopId={shop.id.toString()}
                     initialData={editingTransaction}
+                    productOptions={productOptions}
                 />
             )}
         </div>

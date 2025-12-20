@@ -91,7 +91,7 @@ export default function CustomerPage() {
         const openingBalanceDateString = `${String(openingBalanceDate.getDate()).padStart(2, '0')}-${String(openingBalanceDate.getMonth() + 1).padStart(2, '0')}-${openingBalanceDate.getFullYear()}`;
 
         const newCustomer = {
-            id: editingCustomer ? editingCustomer.id : `ID_${String(customers.length + 1).padStart(3, '0')}`,
+            id: editingCustomer ? editingCustomer.id : `ID_${Date.now()}`,
             name: data.name,
             phone: data.phone,
             registerDate: editingCustomer ? editingCustomer.registerDate : registerDateString,
@@ -191,7 +191,7 @@ export default function CustomerPage() {
 
 function CustomerDetails({ customer, onBack }: { customer: any, onBack: () => void }) {
     const { theme, isDarkMode } = useContext(ThemeContext);
-    const { sales, payments, addSale, updateSale, deleteSale, addPayment, updatePayment, deletePayment, addGlobalTransaction, updateCustomer } = useContext(DataContext);
+    const { sales, payments, addSale, updateSale, deleteSale, addPayment, updatePayment, deletePayment, addGlobalTransaction, updateCustomer, settings } = useContext(DataContext);
     const themeConfig = THEMES[theme];
     const [isMetricsExpanded, setIsMetricsExpanded] = useState(true);
     const [activeSection, setActiveSection] = useState('Recent Sales');
@@ -234,7 +234,7 @@ function CustomerDetails({ customer, onBack }: { customer: any, onBack: () => vo
         setIsOpeningBalanceModalOpen(false);
     };
 
-    const visiblePayments = useMemo(() => payments.filter(p => !p.isGandhi), [payments]);
+    const visiblePayments = useMemo(() => payments, [payments]);
 
     // Calculate Real Metrics - filter by customerId with fallback to name for backward compatibility
     const metrics = useMemo(() => {
@@ -316,7 +316,8 @@ function CustomerDetails({ customer, onBack }: { customer: any, onBack: () => vo
             customer: customer.name,
             product: `${data.productType || 'Product'} • ${data.quantity} ${data.quantityUnit}`,
             amount: totalAmount,
-            rate: parseFloat(data.price).toFixed(2),
+            pricePerBag: parseFloat(data.price).toFixed(2),
+            purchasePrice: parseFloat(data.originalPrice || '0').toFixed(2),
             date: dateStr,
             type: 'Sale' as const,
             note: data.notes
@@ -345,8 +346,7 @@ function CustomerDetails({ customer, onBack }: { customer: any, onBack: () => vo
             date: dateStr,
             type: 'Payment' as const,
             note: data.notes,
-            accountId,
-            isGandhi: accountName === 'Gandhi Account'
+            accountId
         };
 
         if (editingTransaction) {

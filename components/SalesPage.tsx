@@ -22,7 +22,7 @@ type TransactionItem = SalesTransaction | PaymentTransaction;
 
 export default function SalesPage() {
     const { isDarkMode, theme } = useContext(ThemeContext);
-    const { sales, payments, customers, addSale, updateSale, deleteSale, addPayment, updatePayment, deletePayment, addGlobalTransaction, dataLoading } = useContext(DataContext);
+    const { sales, payments, customers, addSale, updateSale, deleteSale, addPayment, updatePayment, deletePayment, addGlobalTransaction, dataLoading, settings } = useContext(DataContext);
     const themeConfig = THEMES[theme];
     const [activeTab, setActiveTab] = useState('All Time');
     const [activeSection, setActiveSection] = useState('Recent Sales');
@@ -49,7 +49,7 @@ export default function SalesPage() {
         return new Date(y, m - 1, d);
     };
 
-    const visiblePayments = useMemo(() => payments.filter(p => !p.isGandhi), [payments]);
+    const visiblePayments = useMemo(() => payments, [payments]);
 
     const chartData = useMemo(() => {
         const totals: Record<string, number> = {};
@@ -137,7 +137,6 @@ export default function SalesPage() {
             type: 'Payment',
             note: paymentData.notes,
             accountId,
-            isGandhi: accountName === 'Gandhi Account',
             ...(editingItem?._docId && { _docId: editingItem._docId }) // Only include _docId when editing
         };
 

@@ -29,9 +29,6 @@ export default function StatsGrid() {
         let give = 0; // Total amount owed TO customers (negative balances / advances)
         let get = 0;  // Total amount owed BY customers (positive balances / outstanding)
 
-        // Filter out Gandhi payments (internal adjustments)
-        const visiblePayments = payments.filter(p => !p.isGandhi);
-
         customers.forEach(customer => {
             // Get all sales for this customer
             const customerSales = sales.filter(s =>
@@ -42,7 +39,7 @@ export default function StatsGrid() {
             );
 
             // Get all payments from this customer
-            const customerPayments = visiblePayments.filter(p =>
+            const customerPayments = payments.filter(p =>
                 p.customerId === customer.id || p.customer === customer.name
             );
             const totalPayments = customerPayments.reduce((acc, payment) =>

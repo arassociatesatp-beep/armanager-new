@@ -52,9 +52,7 @@ export { ThemeContext, DataContext };
 type WithDocId<T> = T & { _docId?: string };
 
 // Initial Mock Data (used as fallback if Firebase not configured)
-const initialAccounts: Account[] = [
-  { id: 5, name: 'Gandhi Account', type: 'Adjustment', balance: '0', accountNumber: '-', openingBalance: '0', openingDate: '01-01-2024' },
-];
+const initialAccounts: Account[] = [];
 
 const initialGlobalTransactions: GlobalTransaction[] = [];
 

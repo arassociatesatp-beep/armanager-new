@@ -2,12 +2,13 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { ThemeContext, DataContext } from '../App';
 import { THEMES } from '../types';
-import { Settings, Save, Scale, Maximize2, Minimize2, Lock, AlertTriangle } from 'lucide-react';
+import { Settings, Save, Scale, Maximize2, Minimize2, Lock, AlertTriangle, User } from 'lucide-react';
 import { hashPassword, verifyPassword } from '../src/utils/hash';
+import { CustomDropdown } from './shared';
 
 export default function SettingsPage() {
     const { isDarkMode, theme } = useContext(ThemeContext);
-    const { settings, updateSettings } = useContext(DataContext);
+    const { settings, updateSettings, accounts } = useContext(DataContext);
     const themeConfig = THEMES[theme];
 
     const [bagsPerTon, setBagsPerTon] = useState(settings.bagsPerTon.toString());
@@ -102,6 +103,52 @@ export default function SettingsPage() {
                     {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
                     {isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                 </button>
+            </div>
+
+            {/* Gandhi Account Section */}
+            <div className={`rounded-xl border p-6 transition-all ${isDarkMode ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
+                <div className="flex items-center gap-2 mb-4">
+                    <User size={18} className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'} />
+                    <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Gandhi Account</h2>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <h3 className={`text-sm font-medium ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>Select Gandhi Account</h3>
+                        <p className={`text-xs mt-1 mb-4 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                            Payments to this account will be excluded from "This Month" and "Total" calculations on the Payment page.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-1 max-w-md">
+                        <label className={`text-xs font-medium ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                            Account
+                        </label>
+                        <CustomDropdown
+                            options={[
+                                { id: '', label: 'None (No exclusions)' },
+                                ...accounts.map((account) => ({
+                                    id: account.id.toString(),
+                                    label: `${account.name} (${account.type})`
+                                }))
+                            ]}
+                            value={settings.gandhiAccountId?.toString() || ''}
+                            onChange={(value: string) => {
+                                updateSettings({
+                                    gandhiAccountId: value ? parseInt(value) : undefined
+                                });
+                            }}
+                            placeholder="Select account"
+                            icon={<User size={14} />}
+                        />
+                    </div>
+
+                    {settings.gandhiAccountId && (
+                        <p className={`text-xs mt-2 flex items-center gap-1 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            ✓ Gandhi account is set: {accounts.find(a => a.id === settings.gandhiAccountId)?.name || 'Unknown'}
+                        </p>
+                    )}
+                </div>
             </div>
 
             {/* Security Section */}

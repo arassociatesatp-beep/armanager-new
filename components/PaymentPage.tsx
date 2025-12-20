@@ -16,7 +16,7 @@ export default function PaymentPage() {
     const themeConfig = THEMES[theme];
 
     // Consume shared data from App.tsx
-    const { accounts, addAccount, addGlobalTransaction, globalTransactions } = useContext(DataContext);
+    const { accounts, addAccount, addGlobalTransaction, globalTransactions, settings } = useContext(DataContext);
     const [selectedAccount, setSelectedAccount] = useState<any>(null);
 
     // Modals
@@ -106,15 +106,20 @@ export default function PaymentPage() {
     };
 
     const totalBalance = useMemo(() => {
-        return accounts.reduce((sum, acc) => sum + parseFloat(acc.balance.replace(/,/g, '')), 0).toLocaleString();
-    }, [accounts]);
+        return accounts
+            .filter(acc => acc.id !== settings.gandhiAccountId) // Exclude Gandhi account
+            .reduce((sum, acc) => sum + parseFloat((acc.balance || '0').toString().replace(/,/g, '')), 0)
+            .toLocaleString();
+    }, [accounts, settings.gandhiAccountId]);
 
     const thisMonthFlow = useMemo(() => {
-        return globalTransactions.reduce((acc, tx) => {
-            const amt = parseFloat(tx.amount.replace(/,/g, ''));
-            return tx.type === 'Credit' ? acc + amt : acc - amt;
-        }, 0).toLocaleString();
-    }, [globalTransactions]);
+        return globalTransactions
+            .filter(tx => tx.accountId !== settings.gandhiAccountId) // Exclude Gandhi account
+            .reduce((acc, tx) => {
+                const amt = parseFloat((tx.amount || '0').toString().replace(/,/g, '')) || 0;
+                return tx.type === 'Credit' ? acc + amt : acc - amt;
+            }, 0).toLocaleString();
+    }, [globalTransactions, settings.gandhiAccountId]);
 
     if (selectedAccount) {
         // Refresh account data from context to get latest balance

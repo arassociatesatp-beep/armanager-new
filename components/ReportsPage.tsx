@@ -143,8 +143,6 @@ export default function ReportsPage() {
     const [enteredPassword, setEnteredPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
 
-    const customerPayments = useMemo(() => payments.filter(p => !p.isGandhi), [payments]);
-
     // Daily Report Filters
     const [dailyReportFilter, setDailyReportFilter] = useState('All');
     const [dailyAccountFilter, setDailyAccountFilter] = useState('All');
@@ -162,6 +160,9 @@ export default function ReportsPage() {
 
     // Customer Category Status Filter
     const [customerStatusFilter, setCustomerStatusFilter] = useState('All');
+
+    // Expense Category Filter
+    const [expenseCategoryFilter, setExpenseCategoryFilter] = useState('All');
 
     // Password unlock handler
     const handleUnlock = async () => {
@@ -194,10 +195,10 @@ export default function ReportsPage() {
     const uniqueCustomers = useMemo(() => {
         const custs = new Set(sales.map(s => s.customer));
         // Also add customers who might have payments but no sales
-        customerPayments.forEach(p => custs.add(p.customer));
+        payments.forEach(p => custs.add(p.customer));
         customers.forEach(c => custs.add(c.name));
         return ['All', ...Array.from(custs).sort()];
-    }, [sales, customerPayments, customers]);
+    }, [sales, payments, customers]);
 
     const uniqueProducts = useMemo(() => {
         const products = new Set(sales.map(s => s.product.split(' • ')[0]));
@@ -278,7 +279,7 @@ export default function ReportsPage() {
     }, [sales, dateRange, selectedCustomer, selectedProduct, selectedCategory, searchQuery, activeReport, customers]);
 
     const filteredPayments = useMemo(() => {
-        return customerPayments.filter(payment => {
+        return payments.filter(payment => {
             if (!isWithinDateRange(payment.date)) return false;
 
             if (activeReport === 'Party Wise Summary') {
@@ -295,7 +296,7 @@ export default function ReportsPage() {
             }
             return true;
         });
-    }, [customerPayments, dateRange, searchQuery, activeReport, selectedCategory, customers]);
+    }, [payments, dateRange, searchQuery, activeReport, selectedCategory, customers]);
 
     const filteredPurchases = useMemo(() => {
         return purchases.filter(p => {
@@ -319,13 +320,21 @@ export default function ReportsPage() {
     const filteredExpenses = useMemo(() => {
         return expenses.filter(e => {
             if (!isWithinDateRange(e.date)) return false;
+            // Category filter for Expenses Report
+            if (expenseCategoryFilter !== 'All' && e.item !== expenseCategoryFilter) return false;
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 return e.vendor.toLowerCase().includes(q) || e.item.toLowerCase().includes(q);
             }
             return true;
         })
-    }, [expenses, dateRange, searchQuery]);
+    }, [expenses, dateRange, searchQuery, expenseCategoryFilter]);
+
+    // Unique expense categories for filter dropdown
+    const uniqueExpenseCategories = useMemo(() => {
+        const categories = new Set(expenses.map(e => e.item));
+        return ['All', ...Array.from(categories).sort()];
+    }, [expenses]);
 
 
     // 4. Aggregate Data
@@ -438,10 +447,7 @@ export default function ReportsPage() {
 
     // E. For "Account's Report"
     const accountReportData = useMemo(() => {
-        return accounts.filter(acc => {
-            // Keep all accounts in list view, but highlighting selected logic if needed
-            return true;
-        }).map(acc => {
+        return accounts.map(acc => {
             const balance = parseFloat(acc.balance.replace(/,/g, ''));
             return {
                 id: acc.id,
@@ -501,14 +507,14 @@ export default function ReportsPage() {
 
         return {
             sales: sales.filter(s => isWithinDateRange(s.date)),
-            payments: customerPayments.filter(p => isWithinDateRange(p.date)),
+            payments: payments.filter(p => isWithinDateRange(p.date)),
             purchases: purchases.filter(p => isWithinDateRange(p.date)),
             expenses: expenses.filter(e => isWithinDateRange(e.date)),
             stocks: stockTransactions.filter(s => isWithinDateRange(s.date)),
             accounts: filteredAccounts,
             newCustomers: customers.filter(c => isWithinDateRange(c.registerDate))
         };
-    }, [dateRange, sales, customerPayments, purchases, expenses, stockTransactions, globalTransactions, customers, dailyAccountFilter, accounts]);
+    }, [dateRange, sales, payments, purchases, expenses, stockTransactions, globalTransactions, customers, dailyAccountFilter, accounts]);
 
     // G. Profit & Loss Logic
     const profitAndLossData = useMemo(() => {
@@ -621,7 +627,7 @@ export default function ReportsPage() {
         }).map(cust => {
             // Calculate current balance - filter by customerId with fallback to name
             const custSales = sales.filter(s => s.customerId === cust.id || s.customer === cust.name);
-            const custPayments = customerPayments.filter(p => p.customerId === cust.id || p.customer === cust.name);
+            const custPayments = payments.filter(p => p.customerId === cust.id || p.customer === cust.name);
             const totalDebit = custSales.reduce((acc, s) => acc + parseFloat(s.amount.replace(/,/g, '')), 0);
             const totalCredit = custPayments.reduce((acc, p) => acc + parseFloat(p.amount.replace(/,/g, '')), 0);
             const opening = parseFloat(cust.openingBalance || '0');
@@ -633,7 +639,7 @@ export default function ReportsPage() {
                 balance: balance
             };
         });
-    }, [customers, sales, customerPayments, selectedCategory, searchQuery]);
+    }, [customers, sales, payments, selectedCategory, searchQuery]);
 
     // J. Detailed Ledger Data for Selected Customer (with date filtering)
     const ledgerDetails = useMemo(() => {
@@ -647,9 +653,9 @@ export default function ReportsPage() {
 
         // Filter by customerId with fallback to name for backward compatibility
         const custSales = sales.filter(s => s.customerId === customer.id || s.customer === customer.name);
-        const custPayments = customerPayments.filter(p => p.customerId === customer.id || p.customer === customer.name);
+        const custPayments = payments.filter(p => p.customerId === customer.id || p.customer === customer.name);
 
-        // Normalize transactions
+        // Create all transactions
         const allTx = [
             ...custSales.map(s => ({
                 id: s.id,
@@ -676,7 +682,7 @@ export default function ReportsPage() {
         const toDate = ledgerDateRange.to ? new Date(ledgerDateRange.to) : null;
         if (toDate) toDate.setHours(23, 59, 59, 999);
 
-        // Calculate effective opening balance (base + transactions before from date)
+        // Calculate effective opening balance
         let effectiveOpeningBalance = baseOpeningBalance;
         let effectiveOpeningBalanceDate = openingBalanceDate;
 
@@ -699,15 +705,14 @@ export default function ReportsPage() {
             filteredTx = filteredTx.filter(tx => tx.date <= toDate);
         }
 
-        // Calculate running balance for filtered transactions
-        let runningBalance = effectiveOpeningBalance;
-        let totalDebit = 0;
-        let totalCredit = 0;
+        // Calculate totals
+        const totalDebit = filteredTx.reduce((sum, tx) => sum + tx.debit, 0);
+        const totalCredit = filteredTx.reduce((sum, tx) => sum + tx.credit, 0);
 
+        // Calculate running balance
+        let runningBalance = effectiveOpeningBalance;
         const transactionsWithBalance = filteredTx.map(tx => {
             runningBalance = runningBalance + tx.debit - tx.credit;
-            totalDebit += tx.debit;
-            totalCredit += tx.credit;
             return { ...tx, balance: runningBalance };
         });
 
@@ -732,13 +737,13 @@ export default function ReportsPage() {
             customer,
             openingBalance: effectiveOpeningBalance,
             openingBalanceDate: effectiveOpeningBalanceDate,
-            totalDebit,
-            totalCredit,
+            totalDebit: totalDebit,
+            totalCredit: totalCredit,
             closingBalance: effectiveOpeningBalance + totalDebit - totalCredit,
             groupedTransactions: Object.values(grouped)
         };
 
-    }, [selectedLedgerCustomer, customers, sales, customerPayments, ledgerDateRange]);
+    }, [selectedLedgerCustomer, customers, sales, payments, ledgerDateRange]);
 
     // K. Expense Grouping for Expenses Report (sorted by date)
     const expensesByCategory = useMemo(() => {
@@ -770,7 +775,7 @@ export default function ReportsPage() {
         }).map(cust => {
             // Calculate customer transactions for balance and last transaction
             const custSales = sales.filter(s => s.customerId === cust.id || s.customer === cust.name);
-            const custPayments = customerPayments.filter(p => p.customerId === cust.id || p.customer === cust.name);
+            const custPayments = payments.filter(p => p.customerId === cust.id || p.customer === cust.name);
 
             const totalDebit = custSales.reduce((acc, s) => acc + parseFloat(s.amount.replace(/,/g, '')), 0);
             const totalCredit = custPayments.reduce((acc, p) => acc + parseFloat(p.amount.replace(/,/g, '')), 0);
@@ -800,7 +805,7 @@ export default function ReportsPage() {
                 lastTransactionStr
             };
         });
-    }, [customers, sales, customerPayments, selectedCategory]);
+    }, [customers, sales, payments, selectedCategory]);
 
 
     // 5. Calculate Summaries
@@ -824,7 +829,9 @@ export default function ReportsPage() {
             const totalBalance = partySummaryData.reduce((sum, item) => sum + item.balance, 0);
             return { totalSales, totalPayments, totalBalance };
         } else if (activeReport === "Account's Report") {
-            const totalBalance = accountReportData.reduce((sum, item) => sum + item.balance, 0);
+            const totalBalance = accountReportData
+                .filter(acc => acc.id !== settings.gandhiAccountId) // Exclude Gandhi account
+                .reduce((sum, item) => sum + item.balance, 0);
             const activeCount = accountReportData.filter(a => a.status === 'Active').length;
             return { totalBalance, activeCount };
         } else if (activeReport === "Daily Report") {
@@ -1697,6 +1704,7 @@ export default function ReportsPage() {
                                     </>
                                 )}
                                 {activeReport === "Account's Report" && <CustomDropdown options={uniqueAccounts} value={selectedAccount} onChange={setSelectedAccount} icon={<Wallet size={14} />} placeholder="Select Account" className="w-48" />}
+                                {activeReport === "Expenses Report" && <CustomDropdown options={uniqueExpenseCategories} value={expenseCategoryFilter} onChange={setExpenseCategoryFilter} icon={<Receipt size={14} />} placeholder="Filter Category" className="w-48" />}
 
                                 {/* Customer Ledger - List View Filters */}
                                 {activeReport === 'Customer Ledger' && (
@@ -1869,7 +1877,6 @@ export default function ReportsPage() {
                             <SummaryCard label="Transactions" value={summaries.count} subtext="Total expense records" icon={<ListChecks size={20} />} color="blue" size="small" />
                         </div>
 
-                        {/* Grouped Tables */}
                         {Object.keys(expensesByCategory).length > 0 ? (
                             Object.entries(expensesByCategory).map(([category, items]) => (
                                 <DailyTable
@@ -2040,7 +2047,7 @@ export default function ReportsPage() {
 
                     const customerDataWithStatus = customerCategoryList.map(customer => {
                         const customerSales = sales.filter(s => s.customerId === customer.id || s.customer === customer.name);
-                        const custPayments = customerPayments.filter(p => p.customerId === customer.id || p.customer === customer.name);
+                        const custPayments = payments.filter(p => p.customerId === customer.id || p.customer === customer.name);
 
                         const allTxDates = [
                             ...customerSales.map(s => parseDate(s.date)),

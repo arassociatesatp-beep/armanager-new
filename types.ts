@@ -127,7 +127,6 @@ export interface PaymentTransaction {
   type: 'Payment';
   note?: string;
   accountId?: number;
-  isGandhi?: boolean;
 }
 
 export interface Customer {
@@ -217,6 +216,7 @@ export interface GlobalTransaction {
 export interface AppSettings {
   bagsPerTon: number;
   reportsPassword?: string; // Password to lock Reports page (optional)
+  gandhiAccountId?: number; // Account to exclude from This Month and Total calculations
 }
 
 export interface Product {
@@ -232,4 +232,5 @@ export interface Reminder {
   dueDate: string;
   status: 'Overdue' | 'Upcoming';
   isCompleted?: boolean;
+  note?: string; // Optional notes for the reminder
 }
