@@ -2,7 +2,7 @@
 import React, { useContext, memo, useState } from 'react';
 import { ThemeContext } from '../../App';
 import { TrendingUp, FileText, Users, Filter } from 'lucide-react';
-import { SummaryCard, formatCurrency } from './shared';
+import { SummaryCard, formatCurrency, PDFHeader } from './shared';
 
 interface PartyWiseSummaryProps {
     partySummaryData: Array<{
@@ -31,6 +31,7 @@ function PartyWiseSummaryComponent({ partySummaryData, summaries }: PartyWiseSum
 
     return (
         <>
+            <PDFHeader />
             <div className="grid grid-cols-3 gap-4">
                 <SummaryCard label="Total Sales" value={formatCurrency(summaries.totalSales as number)} subtext="Across all parties" icon={<TrendingUp size={20} />} color="blue" size="small" />
                 <SummaryCard label="Total Payments" value={formatCurrency(summaries.totalPayments as number)} subtext="Total collected" icon={<FileText size={20} />} color="violet" size="small" />

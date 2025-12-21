@@ -3,7 +3,7 @@ import React, { useContext, memo, useState } from 'react';
 import { ThemeContext } from '../../App';
 import { THEMES } from '../../types';
 import { Users, Package, TrendingUp, Filter } from 'lucide-react';
-import { SummaryCard, formatCurrency } from './shared';
+import { SummaryCard, formatCurrency, PDFHeader } from './shared';
 
 interface ItemReportsByPartyProps {
     itemReportsByPartyData: Array<{
@@ -41,6 +41,7 @@ function ItemReportsByPartyComponent({ itemReportsByPartyData, summaries }: Item
 
     return (
         <>
+            <PDFHeader />
             <div className="grid grid-cols-2 gap-4">
                 <SummaryCard label="Total Customers" value={summaries.totalCustomers} subtext="Active in selection" icon={<Users size={20} />} color="blue" size="small" />
                 <SummaryCard label="Total Qty" value={summaries.totalQty?.toLocaleString()} subtext="Units sold" icon={<Package size={20} />} color="violet" size="small" />

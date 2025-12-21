@@ -84,6 +84,15 @@ export function DailyTable({ title, columns, data, renderRow, initialRowCount = 
 // --- Format Currency Helper ---
 export const formatCurrency = (val: number) => `₹${val?.toLocaleString('en-IN') || '0'}`;
 
+// --- PDF Header Component ---
+export function PDFHeader() {
+    return (
+        <div className="w-full bg-[#1e3a8a] text-white py-6 px-8 mb-6 rounded-t-xl print:rounded-none">
+            <h1 className="text-3xl font-bold tracking-wide">A R ENTERPRISES</h1>
+        </div>
+    );
+}
+
 // --- Report Skeleton for Suspense ---
 export function ReportSkeleton() {
     const { isDarkMode } = useContext(ThemeContext);

@@ -2,7 +2,7 @@
 import React, { useContext, memo, useMemo, useState } from 'react';
 import { ThemeContext } from '../../App';
 import { Users, Filter } from 'lucide-react';
-import { SummaryCard } from './shared';
+import { SummaryCard, PDFHeader } from './shared';
 
 interface CustomerCategoryReportProps {
     customerCategoryList: Array<{
@@ -80,6 +80,7 @@ function CustomerCategoryReportComponent({ customerCategoryList, selectedCategor
 
     return (
         <>
+            <PDFHeader />
             <div className="grid grid-cols-1 gap-4">
                 <SummaryCard
                     label={`Total ${selectedCategory} Customers`}

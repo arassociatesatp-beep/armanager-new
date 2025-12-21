@@ -74,7 +74,7 @@ const initialProducts: Product[] = [];
 
 export default function App() {
   const [theme, setTheme] = useState<ThemeColor>('green');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
   const [firebaseReady, setFirebaseReady] = useState(false);
 
   // Data loading state - tracks when Firebase data has been received

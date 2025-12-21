@@ -114,7 +114,8 @@ export default function CustomerPage() {
         const matchesSearch = c.name.toLowerCase().includes(filterValue.toLowerCase()) || c.phone.includes(filterValue);
         const matchesCategory = filterCategory === 'All' || c.category === filterCategory;
         return matchesSearch && matchesCategory;
-    });
+    }).sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
+
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);

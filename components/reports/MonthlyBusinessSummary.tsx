@@ -2,7 +2,7 @@
 import React, { useContext, memo } from 'react';
 import { ThemeContext } from '../../App';
 import { Filter } from 'lucide-react';
-import { formatCurrency } from './shared';
+import { formatCurrency, PDFHeader } from './shared';
 
 interface MonthlyBusinessSummaryProps {
     monthlySummaryData: Array<{
@@ -24,6 +24,7 @@ function MonthlyBusinessSummaryComponent({ monthlySummaryData, summaries, dateRa
 
     return (
         <>
+            <PDFHeader />
             <div className={`w-full rounded-xl border p-4 sm:p-5 transition-all ${isDarkMode ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div><div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-500'}`}>Duration: {dateRange.from} - {dateRange.to}</div><div className={`text-sm font-semibold ${isDarkMode ? 'text-zinc-200' : 'text-zinc-800'}`}>Monthly Business Summary Report</div></div>

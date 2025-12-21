@@ -25,7 +25,8 @@ export default function StatsGrid() {
     const { customers, sales, payments } = useContext(DataContext);
 
     // Calculate customer balances: opening + sales - payments
-    const { youWillGive, youWillGet } = useMemo(() => {
+    // Calculate dynamic metrics
+    const { youWillGive, youWillGet, totalRevenue, newCustomers, revenueChange, customerChange } = useMemo(() => {
         let give = 0; // Total amount owed TO customers (negative balances / advances)
         let get = 0;  // Total amount owed BY customers (positive balances / outstanding)
 
@@ -59,24 +60,88 @@ export default function StatsGrid() {
             }
         });
 
-        return { youWillGive: give, youWillGet: get };
+        // Calculate Total Revenue from all sales
+        const revenue = sales.reduce((acc, sale) =>
+            acc + parseFloat(sale.amount.replace(/,/g, '') || '0'), 0
+        );
+
+        // Get current date info
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+        // Parse date string (dd-mm-yyyy)
+        const parseDate = (dateStr: string) => {
+            const [d, m, y] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
+
+        // Calculate this month's revenue
+        const thisMonthRevenue = sales.filter(s => {
+            const saleDate = parseDate(s.date);
+            return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+        }).reduce((acc, sale) => acc + parseFloat(sale.amount.replace(/,/g, '') || '0'), 0);
+
+        // Calculate last month's revenue
+        const lastMonthRevenue = sales.filter(s => {
+            const saleDate = parseDate(s.date);
+            return saleDate.getMonth() === lastMonth && saleDate.getFullYear() === lastMonthYear;
+        }).reduce((acc, sale) => acc + parseFloat(sale.amount.replace(/,/g, '') || '0'), 0);
+
+        // Calculate revenue percentage change
+        const revChange = lastMonthRevenue > 0
+            ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+            : thisMonthRevenue > 0 ? 100 : 0;
+
+        // Calculate new customers this month
+        const newCust = customers.filter(c => {
+            if (!c.registerDate) return false;
+            const regDate = parseDate(c.registerDate);
+            return regDate.getMonth() === currentMonth && regDate.getFullYear() === currentYear;
+        }).length;
+
+        // Calculate new customers last month
+        const lastMonthCust = customers.filter(c => {
+            if (!c.registerDate) return false;
+            const regDate = parseDate(c.registerDate);
+            return regDate.getMonth() === lastMonth && regDate.getFullYear() === lastMonthYear;
+        }).length;
+
+        // Calculate customer percentage change
+        const custChange = lastMonthCust > 0
+            ? ((newCust - lastMonthCust) / lastMonthCust) * 100
+            : newCust > 0 ? 100 : 0;
+
+        return {
+            youWillGive: give,
+            youWillGet: get,
+            totalRevenue: revenue,
+            newCustomers: newCust,
+            revenueChange: revChange,
+            customerChange: custChange
+        };
     }, [customers, sales, payments]);
+
+    // Format currency for display
+    const formatCurrency = (num: number) => `₹${Math.round(num).toLocaleString('en-IN')}`;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
             <StatCard
                 title="Total Revenue"
-                value="₹1,25,000"
-                change="+12.5%"
-                trend="up"
-                subtext="Trending up this month"
+                value={formatCurrency(totalRevenue)}
+                change={`${revenueChange >= 0 ? '+' : ''}${revenueChange.toFixed(1)}%`}
+                trend={revenueChange >= 0 ? "up" : "down"}
+                subtext={revenueChange >= 0 ? "Trending up this month" : "Down from last month"}
             />
             <StatCard
                 title="New Customers"
-                value="1,234"
-                change="-20.0%"
-                trend="down"
-                subtext="Down 20% this period"
+                value={newCustomers.toString()}
+                change={`${customerChange >= 0 ? '+' : ''}${customerChange.toFixed(1)}%`}
+                trend={customerChange >= 0 ? "up" : "down"}
+                subtext={customerChange >= 0 ? "Up from last month" : "Down from last month"}
             />
             {/* You Will Give Card */}
             <GiveGetCard

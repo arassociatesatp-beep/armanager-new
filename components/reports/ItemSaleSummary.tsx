@@ -2,7 +2,7 @@
 import React, { useContext, memo, useState } from 'react';
 import { ThemeContext } from '../../App';
 import { Package, TrendingUp, Filter } from 'lucide-react';
-import { SummaryCard } from './shared';
+import { SummaryCard, PDFHeader } from './shared';
 
 interface ItemSaleSummaryProps {
     itemSaleSummaryData: Array<{
@@ -26,6 +26,7 @@ function ItemSaleSummaryComponent({ itemSaleSummaryData, summaries }: ItemSaleSu
 
     return (
         <>
+            <PDFHeader />
             <div className="grid grid-cols-2 gap-4">
                 <SummaryCard label="Total Items" value={summaries.totalItems} subtext="Unique products sold" icon={<Package size={20} />} color="blue" size="small" />
                 <SummaryCard label="Total Quantity" value={summaries.totalQty?.toLocaleString()} subtext="Total units sold" icon={<TrendingUp size={20} />} color="emerald" size="small" />

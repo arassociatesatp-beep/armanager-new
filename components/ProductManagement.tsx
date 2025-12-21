@@ -58,6 +58,7 @@ export default function ProductManagement() {
             const qtyPart = s.product?.split(' • ')[1]?.trim()?.split(' ')[0];
             const qty = parseFloat(qtyPart || '0');
             const amountVal = parseFloat((s.amount || '0').toString().replace(/,/g, '')) || 0;
+            // Use quantity if available, fallback to amount-based estimation
             const contribution = !isNaN(qty) && qty > 0 ? qty : amountVal || 1;
             totals[name] = (totals[name] || 0) + contribution;
         });
