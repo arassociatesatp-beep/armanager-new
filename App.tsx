@@ -242,13 +242,27 @@ export default function App() {
     };
   }, [authLoading, isAuthenticated]); // Re-run when auth state changes
 
-  // Check if all collections are loaded
+  // Check if all collections are loaded (with timeout fallback)
   useEffect(() => {
     if (loadedCollections.size >= TOTAL_COLLECTIONS) {
       setDataLoading(false);
       console.log('✅ All Firebase collections loaded');
     }
   }, [loadedCollections]);
+
+  // Safety timeout: Force loading to complete after 15 seconds to prevent infinite skeleton
+  useEffect(() => {
+    if (!dataLoading || !isAuthenticated || authLoading) return;
+
+    const timeout = setTimeout(() => {
+      if (dataLoading) {
+        console.warn(`⚠️ Data loading timeout after 15s. Loaded ${loadedCollections.size}/${TOTAL_COLLECTIONS} collections:`, Array.from(loadedCollections));
+        setDataLoading(false);
+      }
+    }, 15000); // 15 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [dataLoading, isAuthenticated, authLoading, loadedCollections]);
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 

@@ -455,6 +455,9 @@ export function subscribeToCollection<T>(
             callback(items);
         }, (error) => {
             console.error(`Error in ${collectionName} subscription:`, error);
+            // IMPORTANT: Still call callback with empty array so dataLoading can complete
+            // This prevents infinite skeleton loading when a collection fails
+            callback([]);
         });
 
         return unsubscribe;
