@@ -41,11 +41,7 @@ const ReminderItem: React.FC<ReminderItemProps> = ({ reminder, onToggle, onEdit,
                     <div className={`text-xs mt-0.5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
                         <span className={isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}>₹{reminder.amount}</span>
                         <span className="mx-1.5 opacity-50">•</span>
-                        Due: {(() => {
-                            // Parse YYYY-MM-DD and display as DD/MM/YYYY
-                            const [y, m, d] = reminder.dueDate.split('-');
-                            return `${d}/${m}/${y}`;
-                        })()}
+                        Due: {reminder.dueDate}
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -120,13 +116,21 @@ export default function ReminderSection() {
     const [expandedNoteId, setExpandedNoteId] = useState<number | null>(null);
 
     const handleAddReminder = (data: { customer: string; amount: string; dueDate: string; note?: string }) => {
-        const today = new Date().toISOString().split('T')[0];
-        const status = data.dueDate < today ? 'Overdue' : 'Upcoming';
+        // Parse DD-MM-YYYY format for comparison
+        const [d, m, y] = data.dueDate.split('-').map(Number);
+        const dueDateObj = new Date(y, m - 1, d);
+        dueDateObj.setHours(0, 0, 0, 0);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const status = dueDateObj < today ? 'Overdue' : 'Upcoming';
 
         if (editingReminder) {
-            // Update existing reminder - use empty string instead of undefined for note
+            // Update existing reminder - explicitly include _docId
             updateReminder({
                 ...editingReminder,
+                _docId: editingReminder._docId, // Explicitly preserve _docId for Firebase update
                 customer: data.customer,
                 amount: data.amount,
                 dueDate: data.dueDate,
@@ -166,12 +170,24 @@ export default function ReminderSection() {
         }
     };
 
+    // Helper to parse DD-MM-YYYY to Date object for comparison
+    const parseDDMMYYYY = (dateStr: string): Date => {
+        const [d, m, y] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
     // Calculate status based on current date
-    const today = new Date().toISOString().split('T')[0];
-    const remindersWithStatus = reminders.map(r => ({
-        ...r,
-        status: r.dueDate < today && !r.isCompleted ? 'Overdue' : 'Upcoming' as 'Overdue' | 'Upcoming'
-    }));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+    const remindersWithStatus = reminders.map(r => {
+        const dueDate = parseDDMMYYYY(r.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return {
+            ...r,
+            status: dueDate < today && !r.isCompleted ? 'Overdue' : 'Upcoming' as 'Overdue' | 'Upcoming'
+        };
+    });
 
     const visibleReminders = showAll ? remindersWithStatus : remindersWithStatus.filter(r => !r.isCompleted);
     const overdueReminders = visibleReminders.filter(r => r.status === 'Overdue');
@@ -275,9 +291,12 @@ function AddReminderModal({ onClose, onAdd, initialData }: { onClose: () => void
     const [note, setNote] = useState(initialData?.note || '');
     const [dueDate, setDueDate] = useState<Date | null>(() => {
         if (initialData?.dueDate) {
-            // Parse YYYY-MM-DD format correctly to avoid timezone issues
-            const [year, month, day] = initialData.dueDate.split('-').map(Number);
-            return new Date(year, month - 1, day);
+            // Parse DD-MM-YYYY format
+            const parts = initialData.dueDate.split('-');
+            if (parts.length === 3) {
+                const [day, month, year] = parts.map(Number);
+                return new Date(year, month - 1, day);
+            }
         }
         return null;
     });
@@ -297,8 +316,11 @@ function AddReminderModal({ onClose, onAdd, initialData }: { onClose: () => void
 
     const handleSubmit = () => {
         if (!customer || !amount || !dueDate) return;
-        // Format date as YYYY-MM-DD for storage
-        const formattedDate = dueDate.toISOString().split('T')[0];
+        // Format date as DD-MM-YYYY for storage (consistent with rest of app)
+        const d = dueDate.getDate().toString().padStart(2, '0');
+        const m = (dueDate.getMonth() + 1).toString().padStart(2, '0');
+        const y = dueDate.getFullYear();
+        const formattedDate = `${d}-${m}-${y}`;
         onAdd({ customer, amount, dueDate: formattedDate, note: note || undefined });
     };
 

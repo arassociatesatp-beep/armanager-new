@@ -60,5 +60,10 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read, write: if isAuthenticated();
     }
+
+    // Reminders
+    match /reminders/{docId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }

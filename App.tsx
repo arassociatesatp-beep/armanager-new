@@ -167,67 +167,111 @@ export default function App() {
       setSales(data);
       markLoaded('sales');
     }, 'createdAt');
-    if (salesUnsub) unsubscribes.push(salesUnsub);
+    if (salesUnsub) {
+      unsubscribes.push(salesUnsub);
+    } else {
+      markLoaded('sales'); // Mark as loaded even if subscription failed
+    }
 
     const paymentsUnsub = subscribeToCollection<WithDocId<PaymentTransaction>>('payments', (data) => {
       setPayments(data);
       markLoaded('payments');
     }, 'createdAt');
-    if (paymentsUnsub) unsubscribes.push(paymentsUnsub);
+    if (paymentsUnsub) {
+      unsubscribes.push(paymentsUnsub);
+    } else {
+      markLoaded('payments');
+    }
 
     const customersUnsub = subscribeToCollection<WithDocId<Customer>>('customers', (data) => {
       setCustomers(data);
       markLoaded('customers');
     }, 'createdAt');
-    if (customersUnsub) unsubscribes.push(customersUnsub);
+    if (customersUnsub) {
+      unsubscribes.push(customersUnsub);
+    } else {
+      markLoaded('customers');
+    }
 
     const purchasesUnsub = subscribeToCollection<WithDocId<PurchaseTransaction>>('purchases', (data) => {
       setPurchases(data);
       markLoaded('purchases');
     }, 'createdAt');
-    if (purchasesUnsub) unsubscribes.push(purchasesUnsub);
+    if (purchasesUnsub) {
+      unsubscribes.push(purchasesUnsub);
+    } else {
+      markLoaded('purchases');
+    }
 
     const expensesUnsub = subscribeToCollection<WithDocId<ExpenseTransaction>>('expenses', (data) => {
       setExpenses(data);
       markLoaded('expenses');
     }, 'createdAt');
-    if (expensesUnsub) unsubscribes.push(expensesUnsub);
+    if (expensesUnsub) {
+      unsubscribes.push(expensesUnsub);
+    } else {
+      markLoaded('expenses');
+    }
 
     const stocksUnsub = subscribeToCollection<WithDocId<StockItem>>('stocks', (data) => {
       setStocks(data);
       markLoaded('stocks');
     }, 'createdAt');
-    if (stocksUnsub) unsubscribes.push(stocksUnsub);
+    if (stocksUnsub) {
+      unsubscribes.push(stocksUnsub);
+    } else {
+      markLoaded('stocks');
+    }
 
     const stockTxUnsub = subscribeToCollection<WithDocId<StockTransaction>>('stockTransactions', (data) => {
       setStockTransactions(data);
       markLoaded('stockTransactions');
     }, 'createdAt');
-    if (stockTxUnsub) unsubscribes.push(stockTxUnsub);
+    if (stockTxUnsub) {
+      unsubscribes.push(stockTxUnsub);
+    } else {
+      markLoaded('stockTransactions');
+    }
 
     const accountsUnsub = subscribeToCollection<WithDocId<Account>>('accounts', (data) => {
       setAccounts(data);
       markLoaded('accounts');
     }, 'createdAt');
-    if (accountsUnsub) unsubscribes.push(accountsUnsub);
+    if (accountsUnsub) {
+      unsubscribes.push(accountsUnsub);
+    } else {
+      markLoaded('accounts');
+    }
 
     const globalTxUnsub = subscribeToCollection<WithDocId<GlobalTransaction>>('globalTransactions', (data) => {
       setGlobalTransactions(data);
       markLoaded('globalTransactions');
     }, 'createdAt');
-    if (globalTxUnsub) unsubscribes.push(globalTxUnsub);
+    if (globalTxUnsub) {
+      unsubscribes.push(globalTxUnsub);
+    } else {
+      markLoaded('globalTransactions');
+    }
 
     const productsUnsub = subscribeToCollection<WithDocId<Product>>('products', (data) => {
       setProducts(data);
       markLoaded('products');
     }, 'createdAt');
-    if (productsUnsub) unsubscribes.push(productsUnsub);
+    if (productsUnsub) {
+      unsubscribes.push(productsUnsub);
+    } else {
+      markLoaded('products');
+    }
 
     const remindersUnsub = subscribeToCollection<WithDocId<Reminder>>('reminders', (data) => {
       setReminders(data);
       markLoaded('reminders');
     }, 'createdAt');
-    if (remindersUnsub) unsubscribes.push(remindersUnsub);
+    if (remindersUnsub) {
+      unsubscribes.push(remindersUnsub);
+    } else {
+      markLoaded('reminders');
+    }
 
     // Load settings
     getSettings<AppSettings>().then(savedSettings => {
@@ -256,10 +300,10 @@ export default function App() {
 
     const timeout = setTimeout(() => {
       if (dataLoading) {
-        console.warn(`⚠️ Data loading timeout after 15s. Loaded ${loadedCollections.size}/${TOTAL_COLLECTIONS} collections:`, Array.from(loadedCollections));
+        console.warn(`⚠️ Data loading timeout after 5s. Loaded ${loadedCollections.size}/${TOTAL_COLLECTIONS} collections:`, Array.from(loadedCollections));
         setDataLoading(false);
       }
-    }, 15000); // 15 second timeout
+    }, 5000); // 5 second timeout for better UX
 
     return () => clearTimeout(timeout);
   }, [dataLoading, isAuthenticated, authLoading, loadedCollections]);
