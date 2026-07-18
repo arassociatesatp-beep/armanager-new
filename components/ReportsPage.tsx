@@ -669,14 +669,14 @@ export default function ReportsPage() {
                 date: 'Previous Carry Forward',
                 dateObj: from ? new Date(from.getTime() - 1000) : new Date(0),
                 product: '-',
-                direct: carryDirect,
-                arCo: carryArCo,
-                gv: carryGv,
-                gl: carryGl,
-                billed: carryBilled,
-                totalBilled: carryBilled,
+                direct: 0,
+                arCo: 0,
+                gv: 0,
+                gl: 0,
+                billed: 0,
+                totalBilled: 0,
                 totalUnbilled: carryUnbilled,
-                total: carryTotal,
+                total: 0,
                 isCarryForward: true
             });
         }
@@ -1412,13 +1412,13 @@ export default function ReportsPage() {
                 body: subCategoryReportData.map(row => [
                     row.date,
                     row.product,
-                    row.direct.toFixed(2),
-                    row.arCo.toFixed(2),
-                    row.gv.toFixed(2),
-                    row.gl.toFixed(2),
-                    row.totalBilled.toFixed(2),
+                    row.isCarryForward ? '-' : row.direct.toFixed(2),
+                    row.isCarryForward ? '-' : row.arCo.toFixed(2),
+                    row.isCarryForward ? '-' : row.gv.toFixed(2),
+                    row.isCarryForward ? '-' : row.gl.toFixed(2),
+                    row.isCarryForward ? '-' : row.totalBilled.toFixed(2),
                     row.totalUnbilled.toFixed(2),
-                    row.total.toFixed(2)
+                    row.isCarryForward ? '-' : row.total.toFixed(2)
                 ]),
                 foot: [[
                     'Totals',
@@ -1443,7 +1443,7 @@ export default function ReportsPage() {
 
             csvContent += "Date,Product,Direct,AR & Co,G.V,GL,Total Billed,Total Unbilled,TOTAL\n";
             subCategoryReportData.forEach(row => {
-                csvContent += `"${row.date}","${row.product}",${row.direct},${row.arCo},${row.gv},${row.gl},${row.totalBilled},${row.totalUnbilled},${row.total}\n`;
+                csvContent += `"${row.date}","${row.product}",${row.isCarryForward ? '""' : row.direct},${row.isCarryForward ? '""' : row.arCo},${row.isCarryForward ? '""' : row.gv},${row.isCarryForward ? '""' : row.gl},${row.isCarryForward ? '""' : row.totalBilled},${row.totalUnbilled},${row.isCarryForward ? '""' : row.total}\n`;
             });
             csvContent += `Totals,,${subCategoryColumnTotals.direct},${subCategoryColumnTotals.arCo},${subCategoryColumnTotals.gv},${subCategoryColumnTotals.gl},${subCategoryColumnTotals.totalBilled},${subCategoryColumnTotals.totalUnbilled},${subCategoryColumnTotals.total}\n`;
         }
@@ -2362,13 +2362,13 @@ export default function ReportsPage() {
                                             <tr key={idx} className={`group transition-colors ${row.isCarryForward ? (isDarkMode ? 'bg-zinc-900/60 italic text-zinc-400 font-medium' : 'bg-zinc-100/70 italic text-zinc-600 font-medium') : (isDarkMode ? 'hover:bg-zinc-900/40' : 'hover:bg-zinc-50/60')}`}>
                                                 <td className={`py-3 px-4 font-medium ${isDarkMode ? 'text-zinc-200' : 'text-zinc-900'}`}>{row.date}</td>
                                                 <td className={`py-3 px-4 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.product}</td>
-                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.direct.toFixed(2)}</td>
-                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.arCo.toFixed(2)}</td>
-                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.gv.toFixed(2)}</td>
-                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.gl.toFixed(2)}</td>
-                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.totalBilled.toFixed(2)}</td>
+                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.isCarryForward ? '-' : row.direct.toFixed(2)}</td>
+                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.isCarryForward ? '-' : row.arCo.toFixed(2)}</td>
+                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.isCarryForward ? '-' : row.gv.toFixed(2)}</td>
+                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.isCarryForward ? '-' : row.gl.toFixed(2)}</td>
+                                                <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.isCarryForward ? '-' : row.totalBilled.toFixed(2)}</td>
                                                 <td className={`py-3 px-4 text-right ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>{row.totalUnbilled.toFixed(2)}</td>
-                                                <td className={`py-3 px-4 text-right font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{row.total.toFixed(2)}</td>
+                                                <td className={`py-3 px-4 text-right font-bold ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{row.isCarryForward ? '-' : row.total.toFixed(2)}</td>
                                             </tr>
                                         ))}
                                         {subCategoryReportData.length === 0 && <tr><td colSpan={9} className={`py-12 text-center ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}><div className="flex flex-col items-center gap-2"><Filter size={24} className="opacity-50" /><p>No data found.</p></div></td></tr>}
